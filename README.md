@@ -32,3 +32,7 @@ repos:
         language: system
         files: \.zig$
 ```
+
+## Fix everything
+
+Running this tool without arguments should fix all the code in the working directory. Currently this just means running `zig fmt` on all Zig files in the working directory.

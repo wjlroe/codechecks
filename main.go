@@ -3,7 +3,9 @@ package main
 import (
 	"bytes"
 	"flag"
+	"fmt"
 	"log"
+	"os"
 	"os/exec"
 	"path/filepath"
 )
@@ -19,8 +21,35 @@ func runZigFmt(paths []string) {
 	cmd.Stdout = &out
 	err := cmd.Run()
 	if err != nil {
+		fmt.Printf("Command (%s) errored\n", cmd)
 		log.Fatal(err)
 	}
+}
+
+func fixZigFiles() error {
+	files := []string{}
+	err := filepath.Walk(".", func(path string, info os.FileInfo, err error) error {
+		if err != nil {
+			return err
+		}
+		// TODO: Exclude files ignored by gitignore and the like
+		if info.IsDir() && info.Name() == "zig-cache" {
+			return filepath.SkipDir
+		}
+		if filepath.Ext(path) == ".zig" {
+			files = append(files, path)
+		}
+		return nil
+	})
+	if len(files) > 0 {
+		runZigFmt(files)
+	}
+	return err
+}
+
+func fixAll() error {
+	err := fixZigFiles()
+	return err
 }
 
 func main() {
@@ -30,6 +59,9 @@ func main() {
 	if zigFmt {
 		runZigFmt(flag.Args())
 	} else {
-		log.Fatal("Unknown mode")
+		err := fixAll()
+		if err != nil {
+			log.Fatal(err)
+		}
 	}
 }
